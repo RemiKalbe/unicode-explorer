@@ -5,6 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "react-router dev",
+    "build:unicode": "tsx scripts/build-unicode-data.ts",
+    "prebuild": "npm run build:unicode",
     "build": "react-router build",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc"
@@ -25,6 +27,7 @@
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19.1.5",
     "tailwindcss": "^4.1.7",
+    "tsx": "^4.19.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
   },

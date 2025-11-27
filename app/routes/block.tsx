@@ -12,6 +12,7 @@ import { CharGrid } from "~/components/layout/CharGrid";
 import { CharDetailModal } from "~/components/ui/CharDetailModal";
 import { Toast } from "~/components/ui/Toast";
 import { useFavorites } from "~/hooks/useFavorites";
+import { useCharacterNames, searchByName } from "~/hooks/useCharacterNames";
 
 export function meta({ data }: Route.MetaArgs) {
   if (!data) {
@@ -46,6 +47,7 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [modalChar, setModalChar] = useState<number | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
+  const { names, getName } = useCharacterNames(block.slug);
 
   // Auto-open sidebar on desktop
   useState(() => {
@@ -72,9 +74,15 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
       if (hexMatch !== null) {
         return [hexMatch];
       }
+
+      // Search by character name
+      const nameMatches = searchByName(names, searchQuery);
+      if (nameMatches.length > 0) {
+        return nameMatches;
+      }
     }
     return getCharCodesForBlock(block);
-  }, [block, searchQuery]);
+  }, [block, searchQuery, names]);
 
   return (
     <div className="flex h-screen bg-softcreme-98 dark:bg-darkzinc text-darkzinc-21 dark:text-lightzinc-40 font-mono overflow-hidden relative selection:bg-olive-88 dark:selection:bg-olive-35 selection:text-olive-41 dark:selection:text-olive-82">
@@ -115,6 +123,7 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
       {modalChar !== null && (
         <CharDetailModal
           charCode={modalChar}
+          charName={getName(modalChar)}
           onClose={() => setModalChar(null)}
           onToggleFav={handleToggleFavorite}
           isFav={favorites.includes(modalChar)}
