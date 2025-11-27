@@ -6,10 +6,12 @@ import {
   getCharCodesForBlock,
   parseHexSearch,
   parseCodePoint,
+  getBlockByCodePoint,
 } from "~/data/unicode-blocks";
 import {
   loadBlockNames,
   searchAllBlocks,
+  loadCharacterName,
   type CharacterNames,
   type GlobalSearchResults,
 } from "~/data/unicode-names.server";
@@ -28,12 +30,59 @@ export function meta({ data }: Route.MetaArgs) {
       { name: "description", content: "The requested Unicode block was not found." },
     ];
   }
+
+  const { block, selectedChar } = data;
+
+  // If a character is selected via ?char= param, show character-specific meta
+  if (selectedChar) {
+    const { hex, char, charName } = selectedChar;
+    const title = charName
+      ? `${char} ${charName} (U+${hex}) - Unicode Explorer`
+      : `${char} U+${hex} - Unicode Explorer`;
+    const description = charName
+      ? `Unicode character ${char} (U+${hex}) - ${charName}. Part of the ${block.name} block. Get HTML entities, CSS codes, and more.`
+      : `Unicode character ${char} (U+${hex}) from the ${block.name} block. Get HTML entities, CSS codes, and more.`;
+    const ogImagePath = `/og/${hex}.png`;
+    const imageAlt = charName
+      ? `Unicode character ${char} - ${charName}`
+      : `Unicode character ${char} (U+${hex})`;
+
+    return [
+      { title },
+      { name: "description", content: description },
+      // Open Graph
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: ogImagePath },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: imageAlt },
+      // Twitter Card
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: description },
+      { name: "twitter:image", content: ogImagePath },
+      { name: "twitter:image:alt", content: imageAlt },
+      // Additional SEO
+      { name: "keywords", content: `unicode, ${charName || ""}, U+${hex}, ${block.name}, character, symbol, HTML entity` },
+    ];
+  }
+
+  // Default block meta (no character selected)
+  const blockDescription = `Explore Unicode characters in the ${block.name} block (U+${block.start.toString(16).toUpperCase().padStart(4, "0")} - U+${block.end.toString(16).toUpperCase().padStart(4, "0")})`;
+
   return [
-    { title: `${data.block.name} - Unicode Explorer` },
-    {
-      name: "description",
-      content: `Explore Unicode characters in the ${data.block.name} block (U+${data.block.start.toString(16).toUpperCase().padStart(4, "0")} - U+${data.block.end.toString(16).toUpperCase().padStart(4, "0")})`,
-    },
+    { title: `${block.name} - Unicode Explorer` },
+    { name: "description", content: blockDescription },
+    // Open Graph for block
+    { property: "og:title", content: `${block.name} - Unicode Explorer` },
+    { property: "og:description", content: blockDescription },
+    { property: "og:type", content: "website" },
+    // Twitter Card for block
+    { name: "twitter:card", content: "summary" },
+    { name: "twitter:title", content: `${block.name} - Unicode Explorer` },
+    { name: "twitter:description", content: blockDescription },
   ];
 }
 
@@ -47,9 +96,25 @@ export function loader({ params, request }: Route.LoaderArgs) {
   // Load character names server-side
   const names = loadBlockNames(block.slug);
 
-  // Check for search query in URL params
+  // Check for search query and char selection in URL params
   const url = new URL(request.url);
   const searchQuery = url.searchParams.get("q") || "";
+  const charParam = url.searchParams.get("char");
+
+  // Parse selected character for OG meta tags
+  let selectedChar: { charCode: number; hex: string; char: string; charName: string | undefined } | null = null;
+  if (charParam) {
+    const charCode = parseCodePoint(charParam);
+    if (charCode !== null) {
+      const charBlock = getBlockByCodePoint(charCode);
+      if (charBlock) {
+        const hex = charCode.toString(16).toUpperCase().padStart(4, "0");
+        const char = String.fromCodePoint(charCode);
+        const charName = loadCharacterName(charBlock.slug, charCode);
+        selectedChar = { charCode, hex, char, charName };
+      }
+    }
+  }
 
   // Perform global search if there's a query
   let globalSearchResults: GlobalSearchResults = {};
@@ -62,7 +127,7 @@ export function loader({ params, request }: Route.LoaderArgs) {
     }
   }
 
-  return { block, names, searchQuery, globalSearchResults };
+  return { block, names, searchQuery, globalSearchResults, selectedChar };
 }
 
 // Helper to get character name from names object
