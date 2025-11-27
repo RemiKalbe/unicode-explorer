@@ -128,16 +128,19 @@
 
 @media (prefers-color-scheme: light) {
   .crt-overlay {
-    background: linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.02) 50%),
+    background: linear-gradient(
+        rgba(18, 18, 18, 0) 50%,
+        rgba(0, 0, 0, 0.125) 50%
+      ),
       linear-gradient(
         90deg,
-        rgba(0, 0, 0, 0.01),
-        rgba(0, 0, 0, 0.005),
-        rgba(0, 0, 0, 0.01)
+        rgba(255, 0, 0, 0.03),
+        rgba(0, 255, 0, 0.01),
+        rgba(0, 0, 255, 0.03)
       );
-    background-size: 100% 3px, 3px 100%;
-    mix-blend-mode: multiply;
-    opacity: 0.05;
+    background-size: 100% 4px, 6px 100%;
+    mix-blend-mode: hard-light;
+    opacity: 0.15;
   }
 }
 
