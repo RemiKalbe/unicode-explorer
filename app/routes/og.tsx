@@ -10,11 +10,11 @@ import {
 import { loadCharacterName } from "~/data/unicode-names.server";
 import { toHex } from "~/lib/utils";
 
-// Load font at module initialization
+// Load fonts at module initialization
 // Try production path first (build/client/fonts), then fallback to dev path (public/fonts)
-function loadFontData(): Buffer {
-  const prodPath = join(process.cwd(), "build/client/fonts/JetBrainsMono-Regular.ttf");
-  const devPath = join(process.cwd(), "public/fonts/JetBrainsMono-Regular.ttf");
+function loadFontFile(filename: string): Buffer {
+  const prodPath = join(process.cwd(), "build/client/fonts", filename);
+  const devPath = join(process.cwd(), "public/fonts", filename);
 
   if (existsSync(prodPath)) {
     return readFileSync(prodPath);
@@ -22,7 +22,11 @@ function loadFontData(): Buffer {
   return readFileSync(devPath);
 }
 
-const fontData = loadFontData();
+// Load all fonts for broad Unicode coverage
+// Use Noto Serif to match the website's font-serif styling for characters
+const jetBrainsMonoFont = loadFontFile("JetBrainsMono-Regular.ttf");
+const notoSerifFont = loadFontFile("NotoSerif-Regular.ttf");
+const notoEmojiFont = loadFontFile("NotoEmoji-Regular.ttf");
 
 export async function loader({ params }: Route.LoaderArgs) {
   const codepoint = params.codepoint;
@@ -146,6 +150,7 @@ export async function loader({ params }: Route.LoaderArgs) {
                   fontSize: "180px",
                   color: textColor,
                   lineHeight: 1,
+                  fontFamily: "Noto Emoji, Noto Serif, JetBrains Mono",
                 }}
               >
                 {char}
@@ -209,7 +214,19 @@ export async function loader({ params }: Route.LoaderArgs) {
       fonts: [
         {
           name: "JetBrains Mono",
-          data: fontData,
+          data: jetBrainsMonoFont,
+          weight: 400,
+          style: "normal",
+        },
+        {
+          name: "Noto Serif",
+          data: notoSerifFont,
+          weight: 400,
+          style: "normal",
+        },
+        {
+          name: "Noto Emoji",
+          data: notoEmojiFont,
           weight: 400,
           style: "normal",
         },
