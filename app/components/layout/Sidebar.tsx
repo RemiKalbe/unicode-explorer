@@ -16,6 +16,7 @@ interface SidebarProps {
   onSearchChange: (query: string) => void;
   favoritesCount: number;
   globalSearchResults?: GlobalSearchResults;
+  filterBlock?: string;
 }
 
 export function Sidebar({
@@ -25,6 +26,7 @@ export function Sidebar({
   onSearchChange,
   favoritesCount,
   globalSearchResults = {},
+  filterBlock = "",
 }: SidebarProps) {
   const location = useLocation();
   const isFavoritesPage = location.pathname === "/favorites";
@@ -35,6 +37,12 @@ export function Sidebar({
   // Determine which blocks to show based on search
   const hasGlobalResults = Object.keys(globalSearchResults).length > 0;
   const isNameSearch = searchQuery.length >= 2 && parseHexSearch(searchQuery) === null;
+
+  // Calculate total results for "All Results" option
+  const totalResults = Object.values(globalSearchResults).reduce(
+    (sum, codes) => sum + codes.length,
+    0
+  );
 
   // If searching by name and have results, only show blocks with matches
   // Otherwise, filter by block name as before
@@ -129,6 +137,31 @@ export function Sidebar({
 
             <div className="h-4"></div>
 
+            {/* Show "All Results" option when searching */}
+            {isNameSearch && hasGlobalResults && (
+              <Link
+                to={`/block/${currentBlockSlug || UNICODE_BLOCKS[0].slug}?q=${encodeURIComponent(searchQuery)}`}
+                onClick={onClose}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-bold uppercase transition-colors border-b border-softcreme-82 dark:border-darkzinc-12 ${
+                  !filterBlock
+                    ? "bg-olive-94 dark:bg-olive-53/10 text-olive-41 dark:text-olive-65 border-olive-76 dark:border-olive-65/30"
+                    : "text-lightzinc-10 dark:text-lightzinc-10 hover:text-olive-41 dark:hover:text-olive-53 hover:bg-softcreme-94 dark:hover:bg-darkzinc-9/50 active:bg-softcreme-90 dark:active:bg-darkzinc-15"
+                }`}
+              >
+                <Scan size={14} />
+                All Results
+                <span
+                  className={`ml-auto text-[10px] border px-1.5 ${
+                    !filterBlock
+                      ? "border-olive-53 dark:border-olive-65/50"
+                      : "border-softcreme-70 dark:border-darkzinc-21"
+                  }`}
+                >
+                  {totalResults}
+                </span>
+              </Link>
+            )}
+
             {CATEGORIES.map((cat) => {
               const catBlocks = filteredBlocks.filter((b) => b.cat === cat);
               if (catBlocks.length === 0) return null;
@@ -144,16 +177,18 @@ export function Sidebar({
                   </div>
                   {catBlocks.map((block) => {
                     const hitCount = globalSearchResults[block.slug]?.length || 0;
+                    // When searching, clicking a block filters to that specific block
                     const blockUrl = isNameSearch && searchQuery
-                      ? `/block/${block.slug}?q=${encodeURIComponent(searchQuery)}`
+                      ? `/block/${block.slug}?q=${encodeURIComponent(searchQuery)}&filterBlock=${block.slug}`
                       : `/block/${block.slug}`;
+                    const isFilteredToThisBlock = filterBlock === block.slug;
                     return (
                       <Link
                         key={block.name}
                         to={blockUrl}
                         onClick={onClose}
                         className={`w-full text-left px-4 py-3 md:py-1.5 text-xs font-medium transition-colors flex items-center justify-between group ${
-                          currentBlockSlug === block.slug
+                          isFilteredToThisBlock
                             ? "bg-olive-53 dark:bg-olive-65 text-white dark:text-black"
                             : "text-darkzinc-21 dark:text-lightzinc-40 hover:text-olive-41 dark:hover:text-olive-53 hover:bg-softcreme-94 dark:hover:bg-darkzinc-9/50 active:bg-softcreme-90 dark:active:bg-darkzinc-15"
                         }`}
@@ -161,13 +196,13 @@ export function Sidebar({
                         <span className="truncate pr-2">{block.name}</span>
                         {isNameSearch && hitCount > 0 ? (
                           <span className={`text-[10px] px-1.5 ${
-                            currentBlockSlug === block.slug
+                            isFilteredToThisBlock
                               ? "bg-white/20 dark:bg-black/20"
                               : "bg-olive-88 dark:bg-olive-35/30 text-olive-41 dark:text-olive-65"
                           }`}>
                             {hitCount}
                           </span>
-                        ) : currentBlockSlug === block.slug ? (
+                        ) : currentBlockSlug === block.slug && !isNameSearch ? (
                           <span className="font-bold">{"<"}</span>
                         ) : null}
                       </Link>

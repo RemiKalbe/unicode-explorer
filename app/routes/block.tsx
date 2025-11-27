@@ -93,12 +93,10 @@ export function loader({ params, request }: Route.LoaderArgs) {
     throw data(null, { status: 404, statusText: "Block not found" });
   }
 
-  // Load character names server-side
-  const names = loadBlockNames(block.slug);
-
-  // Check for search query and char selection in URL params
+  // Check for search query, filter, and char selection in URL params
   const url = new URL(request.url);
   const searchQuery = url.searchParams.get("q") || "";
+  const filterBlock = url.searchParams.get("filterBlock") || "";
   const charParam = url.searchParams.get("char");
 
   // Parse selected character for OG meta tags
@@ -127,7 +125,22 @@ export function loader({ params, request }: Route.LoaderArgs) {
     }
   }
 
-  return { block, names, searchQuery, globalSearchResults, selectedChar };
+  // Load character names - for current block or all blocks with results
+  let names: CharacterNames = {};
+  const hasGlobalResults = Object.keys(globalSearchResults).length > 0;
+
+  if (hasGlobalResults && !filterBlock) {
+    // Load names for all blocks with results (for showing all results)
+    for (const blockSlug of Object.keys(globalSearchResults)) {
+      const blockNames = loadBlockNames(blockSlug);
+      names = { ...names, ...blockNames };
+    }
+  } else {
+    // Load names only for current block
+    names = loadBlockNames(block.slug);
+  }
+
+  return { block, names, searchQuery, filterBlock, globalSearchResults, selectedChar };
 }
 
 // Helper to get character name from names object
@@ -138,13 +151,17 @@ function getCharName(names: CharacterNames, charCode: number): string | undefine
 }
 
 export default function BlockPage({ loaderData }: Route.ComponentProps) {
-  const { block, names, searchQuery: initialSearchQuery, globalSearchResults } = loaderData;
+  const { block, names, searchQuery: initialSearchQuery, filterBlock, globalSearchResults } = loaderData;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
+
+  // Determine if we're showing all results or filtered to a block
+  const hasGlobalResults = Object.keys(globalSearchResults).length > 0;
+  const isShowingAllResults = hasGlobalResults && !filterBlock;
 
   // Get modal char from URL search params
   const charParam = searchParams.get("char");
@@ -162,6 +179,8 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
         } else {
           params.delete("q");
         }
+        // Clear filterBlock when search changes (show all results for new search)
+        params.delete("filterBlock");
         navigate(`/block/${block.slug}${params.toString() ? `?${params}` : ""}`, { replace: true });
       }, 300);
       return () => clearTimeout(timeoutId);
@@ -195,19 +214,29 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
         return [hexMatch];
       }
 
-      // Use global search results for current block
-      const blockResults = globalSearchResults[block.slug];
-      if (blockResults && blockResults.length > 0) {
-        return blockResults;
-      }
-
-      // If searching but no results for this block, show empty
-      if (Object.keys(globalSearchResults).length > 0) {
-        return [];
+      // If we have global search results
+      if (hasGlobalResults) {
+        if (filterBlock) {
+          // Filter to specific block
+          return globalSearchResults[filterBlock] || [];
+        } else {
+          // Show ALL results from ALL blocks
+          const allResults: number[] = [];
+          for (const codes of Object.values(globalSearchResults)) {
+            allResults.push(...codes);
+          }
+          return allResults.sort((a, b) => a - b);
+        }
       }
     }
     return getCharCodesForBlock(block);
-  }, [block, searchQuery, globalSearchResults]);
+  }, [block, searchQuery, globalSearchResults, filterBlock, hasGlobalResults]);
+
+  // Calculate total results count for header
+  const totalResultsCount = useMemo(() => {
+    if (!hasGlobalResults) return 0;
+    return Object.values(globalSearchResults).reduce((sum, codes) => sum + codes.length, 0);
+  }, [globalSearchResults, hasGlobalResults]);
 
   return (
     <div className="flex h-screen bg-softcreme-98 dark:bg-darkzinc text-darkzinc-21 dark:text-lightzinc-40 font-mono overflow-hidden relative selection:bg-olive-88 dark:selection:bg-olive-35 selection:text-olive-41 dark:selection:text-olive-82">
@@ -221,18 +250,19 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
         onSearchChange={handleSearchChange}
         favoritesCount={favorites.length}
         globalSearchResults={globalSearchResults}
+        filterBlock={filterBlock}
       />
 
       <main className="flex-1 flex flex-col min-w-0 bg-softcreme-98 dark:bg-darkzinc relative">
         <MobileHeader
-          title={block.name}
+          title={isShowingAllResults ? `Search: "${searchQuery}"` : (filterBlock ? `${block.name} (filtered)` : block.name)}
           onMenuClick={() => setIsSidebarOpen(true)}
         />
         <DesktopHeader
-          title={block.name}
-          category={block.cat}
+          title={isShowingAllResults ? `Search Results for "${searchQuery}"` : (filterBlock ? block.name : block.name)}
+          category={isShowingAllResults ? "Search" : (filterBlock ? `${block.cat} (filtered)` : block.cat)}
           count={charCodes.length}
-          range={{ start: block.start, end: block.end }}
+          range={isShowingAllResults ? undefined : { start: block.start, end: block.end }}
         />
 
         <div className="flex-1 overflow-y-auto p-2 lg:p-6 custom-scrollbar">
