@@ -354,6 +354,10 @@ export function getCharCodesForBlock(block: UnicodeBlock): number[] {
 
 export function parseHexSearch(query: string): number | null {
   const cleanQuery = query.replace(/U\+|0x/i, "").toUpperCase();
+  // Ensure the entire string is valid hex (not just a prefix)
+  if (!/^[0-9A-F]+$/.test(cleanQuery)) {
+    return null;
+  }
   const hexMatch = parseInt(cleanQuery, 16);
   if (!isNaN(hexMatch) && hexMatch >= 0 && hexMatch <= 0x10ffff) {
     return hexMatch;
