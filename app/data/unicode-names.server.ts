@@ -4,11 +4,12 @@
  */
 
 import { readFileSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const NAMES_DIR = join(__dirname, "unicode-names");
+// Use process.cwd() for consistent path resolution in both dev and production
+// In production: cwd is /app, files are at /app/app/data/unicode-names/
+// In development: cwd is project root, files are at ./app/data/unicode-names/
+const NAMES_DIR = join(process.cwd(), "app", "data", "unicode-names");
 
 export type CharacterNames = Record<string, string>; // hex code -> name
 
