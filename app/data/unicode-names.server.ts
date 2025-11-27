@@ -3,8 +3,9 @@
  * Names are generated at build time by scripts/build-unicode-data.ts
  */
 
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { UNICODE_BLOCKS } from "./unicode-blocks";
 
 // Use process.cwd() for consistent path resolution in both dev and production
 // In production: cwd is /app, files are at /app/app/data/unicode-names/
@@ -12,6 +13,9 @@ import { join } from "node:path";
 const NAMES_DIR = join(process.cwd(), "app", "data", "unicode-names");
 
 export type CharacterNames = Record<string, string>; // hex code -> name
+
+// Search result: block slug -> array of matching character codes
+export type GlobalSearchResults = Record<string, number[]>;
 
 // Cache loaded names in memory
 const namesCache = new Map<string, CharacterNames>();
@@ -67,4 +71,49 @@ export function loadCharacterName(
 ): string | undefined {
   const names = loadBlockNames(blockSlug);
   return getCharacterName(names, charCode);
+}
+
+/**
+ * Load all block names into cache
+ */
+function loadAllBlockNames(): void {
+  for (const block of UNICODE_BLOCKS) {
+    if (!namesCache.has(block.slug)) {
+      loadBlockNames(block.slug);
+    }
+  }
+}
+
+/**
+ * Search for characters by name across all blocks
+ * Returns matching character codes grouped by block slug
+ */
+export function searchAllBlocks(query: string): GlobalSearchResults {
+  if (!query || query.length < 2) {
+    return {};
+  }
+
+  // Ensure all blocks are loaded
+  loadAllBlockNames();
+
+  const results: GlobalSearchResults = {};
+  const upperQuery = query.toUpperCase();
+
+  for (const block of UNICODE_BLOCKS) {
+    const names = namesCache.get(block.slug);
+    if (!names) continue;
+
+    const matches: number[] = [];
+    for (const [hex, name] of Object.entries(names)) {
+      if (name.toUpperCase().includes(upperQuery)) {
+        matches.push(parseInt(hex, 16));
+      }
+    }
+
+    if (matches.length > 0) {
+      results[block.slug] = matches.sort((a, b) => a - b);
+    }
+  }
+
+  return results;
 }
