@@ -53,6 +53,13 @@ export function CharGrid({
     };
   }, []);
 
+  // Reset scroll position when charCodes changes (e.g., navigating to different block)
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [charCodes]);
+
   // Calculate grid dimensions
   const cellSize = isDesktop ? CELL_SIZE_DESKTOP : CELL_SIZE_MOBILE;
   const columnCount = useMemo(() => {
