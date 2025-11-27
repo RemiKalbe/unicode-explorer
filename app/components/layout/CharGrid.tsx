@@ -15,6 +15,7 @@ interface CharGridProps {
   onToggleFav: (code: number) => void;
   emptyMessage?: string;
   emptySubMessage?: string;
+  blockSlug?: string;
 }
 
 export function CharGrid({
@@ -24,6 +25,7 @@ export function CharGrid({
   onToggleFav,
   emptyMessage = "No data found",
   emptySubMessage,
+  blockSlug,
 }: CharGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -53,12 +55,12 @@ export function CharGrid({
     };
   }, []);
 
-  // Reset scroll position when charCodes changes (e.g., navigating to different block)
+  // Reset scroll position when block changes
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = 0;
     }
-  }, [charCodes]);
+  }, [blockSlug]);
 
   // Calculate grid dimensions
   const cellSize = isDesktop ? CELL_SIZE_DESKTOP : CELL_SIZE_MOBILE;
