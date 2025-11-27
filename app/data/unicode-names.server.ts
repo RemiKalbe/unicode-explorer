@@ -54,6 +54,17 @@ export function getCharacterName(
   names: CharacterNames,
   charCode: number
 ): string | undefined {
-  const hex = charCode.toString(16).toUpperCase();
+  const hex = charCode.toString(16).toUpperCase().padStart(4, "0");
   return names[hex];
+}
+
+/**
+ * Load a single character's name by code point and block slug
+ */
+export function loadCharacterName(
+  blockSlug: string,
+  charCode: number
+): string | undefined {
+  const names = loadBlockNames(blockSlug);
+  return getCharacterName(names, charCode);
 }

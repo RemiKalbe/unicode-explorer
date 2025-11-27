@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { data } from "react-router";
+import { data, useNavigate } from "react-router";
 import MiniSearch from "minisearch";
 import type { Route } from "./+types/block";
 import {
@@ -11,9 +11,9 @@ import { loadBlockNames, type CharacterNames } from "~/data/unicode-names.server
 import { Sidebar } from "~/components/layout/Sidebar";
 import { MobileHeader, DesktopHeader } from "~/components/layout/Header";
 import { CharGrid } from "~/components/layout/CharGrid";
-import { CharDetailModal } from "~/components/ui/CharDetailModal";
 import { Toast } from "~/components/ui/Toast";
 import { useFavorites } from "~/hooks/useFavorites";
+import { toHex } from "~/lib/utils";
 
 export function meta({ data }: Route.MetaArgs) {
   if (!data) {
@@ -56,8 +56,8 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [modalChar, setModalChar] = useState<number | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
+  const navigate = useNavigate();
 
   // Build MiniSearch index for character names
   const searchIndex = useMemo(() => {
@@ -145,23 +145,11 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
           <CharGrid
             charCodes={charCodes}
             favorites={favorites}
-            onCharClick={(code) => setModalChar(code)}
+            onCharClick={(code) => navigate(`/char/${toHex(code)}`)}
             onToggleFav={handleToggleFavorite}
           />
         </div>
       </main>
-
-      {/* Detail Modal */}
-      {modalChar !== null && (
-        <CharDetailModal
-          charCode={modalChar}
-          charName={getCharName(names, modalChar)}
-          onClose={() => setModalChar(null)}
-          onToggleFav={handleToggleFavorite}
-          isFav={favorites.includes(modalChar)}
-          onCopy={() => showToast("Copied to clipboard")}
-        />
-      )}
 
       {/* Toast Notification */}
       {toastMsg && (

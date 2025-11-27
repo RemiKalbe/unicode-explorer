@@ -1,11 +1,12 @@
 import { useState, useCallback } from "react";
+import { useNavigate } from "react-router";
 import type { Route } from "./+types/favorites";
 import { Sidebar } from "~/components/layout/Sidebar";
 import { MobileHeader, DesktopHeader } from "~/components/layout/Header";
 import { CharGrid } from "~/components/layout/CharGrid";
-import { CharDetailModal } from "~/components/ui/CharDetailModal";
 import { Toast } from "~/components/ui/Toast";
 import { useFavorites } from "~/hooks/useFavorites";
+import { toHex } from "~/lib/utils";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -21,8 +22,8 @@ export default function FavoritesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [modalChar, setModalChar] = useState<number | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
+  const navigate = useNavigate();
 
   // Auto-open sidebar on desktop
   useState(() => {
@@ -66,24 +67,13 @@ export default function FavoritesPage() {
           <CharGrid
             charCodes={favorites}
             favorites={favorites}
-            onCharClick={(code) => setModalChar(code)}
+            onCharClick={(code) => navigate(`/char/${toHex(code)}`)}
             onToggleFav={handleToggleFavorite}
             emptyMessage="Memory Empty"
             emptySubMessage="Mark sectors to save"
           />
         </div>
       </main>
-
-      {/* Detail Modal */}
-      {modalChar !== null && (
-        <CharDetailModal
-          charCode={modalChar}
-          onClose={() => setModalChar(null)}
-          onToggleFav={handleToggleFavorite}
-          isFav={favorites.includes(modalChar)}
-          onCopy={() => showToast("Copied to clipboard")}
-        />
-      )}
 
       {/* Toast Notification */}
       {toastMsg && (

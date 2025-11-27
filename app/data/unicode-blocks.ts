@@ -360,3 +360,25 @@ export function parseHexSearch(query: string): number | null {
   }
   return null;
 }
+
+/**
+ * Find the Unicode block that contains a given code point
+ */
+export function getBlockByCodePoint(codePoint: number): UnicodeBlock | undefined {
+  return UNICODE_BLOCKS.find(
+    (block) => codePoint >= block.start && codePoint <= block.end
+  );
+}
+
+/**
+ * Parse a codepoint string (hex) to a number
+ * Accepts formats: "0041", "41", "U+0041", "0x0041"
+ */
+export function parseCodePoint(codePointStr: string): number | null {
+  const cleaned = codePointStr.replace(/^(U\+|0x)/i, "");
+  const codePoint = parseInt(cleaned, 16);
+  if (!isNaN(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff) {
+    return codePoint;
+  }
+  return null;
+}
