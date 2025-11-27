@@ -33,7 +33,7 @@ export function meta({ data }: Route.MetaArgs) {
 
   const { block, selectedChar } = data;
 
-  // If a character is selected via ?char= param, show character-specific meta with OG image
+  // If a character is selected via /:char path param, show character-specific meta with OG image
   if (selectedChar) {
     const { hex, char, charName } = selectedChar;
     const title = charName
@@ -93,16 +93,15 @@ export function loader({ params, request }: Route.LoaderArgs) {
     throw data(null, { status: 404, statusText: "Block not found" });
   }
 
-  // Check for search query, filter, and char selection in URL params
+  // Check for search query and filter in URL params
   const url = new URL(request.url);
   const searchQuery = url.searchParams.get("q") || "";
   const filterBlock = url.searchParams.get("filterBlock") || "";
-  const charParam = url.searchParams.get("char");
 
-  // Parse selected character for OG meta tags
+  // Parse selected character from path param for OG meta tags
   let selectedChar: { charCode: number; hex: string; char: string; charName: string | undefined } | null = null;
-  if (charParam) {
-    const charCode = parseCodePoint(charParam);
+  if (params.char) {
+    const charCode = parseCodePoint(params.char);
     if (charCode !== null) {
       const charBlock = getBlockByCodePoint(charCode);
       if (charBlock) {
@@ -151,9 +150,9 @@ function getCharName(names: CharacterNames, charCode: number): string | undefine
 }
 
 export default function BlockPage({ loaderData }: Route.ComponentProps) {
-  const { block, names, searchQuery: initialSearchQuery, filterBlock, globalSearchResults } = loaderData;
+  const { block, names, searchQuery: initialSearchQuery, filterBlock, globalSearchResults, selectedChar } = loaderData;
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -163,9 +162,8 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
   const hasGlobalResults = Object.keys(globalSearchResults).length > 0;
   const isShowingAllResults = hasGlobalResults && !filterBlock;
 
-  // Get modal char from URL search params
-  const charParam = searchParams.get("char");
-  const modalChar = charParam ? parseCodePoint(charParam) : null;
+  // Get modal char from path param (via loader)
+  const modalChar = selectedChar?.charCode ?? null;
 
   // Sync search query with URL
   const handleSearchChange = useCallback(
@@ -270,26 +268,25 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
             charCodes={charCodes}
             favorites={favorites}
             onCharClick={(code) => {
-              // Update URL with char param to open modal
-              const params = new URLSearchParams(searchParams);
-              params.set("char", toHex(code));
-              setSearchParams(params);
+              // Navigate to character path to open modal
+              const charHex = toHex(code);
+              const queryString = searchParams.toString();
+              navigate(`/block/${block.slug}/${charHex}${queryString ? `?${queryString}` : ""}`);
             }}
             onToggleFav={handleToggleFavorite}
           />
         </div>
       </main>
 
-      {/* Detail Modal - shown when char param is in URL */}
+      {/* Detail Modal - shown when char path param is in URL */}
       {modalChar !== null && (
         <CharDetailModal
           charCode={modalChar}
           charName={getCharName(names, modalChar)}
           onClose={() => {
-            // Remove char param to close modal
-            const params = new URLSearchParams(searchParams);
-            params.delete("char");
-            setSearchParams(params);
+            // Navigate back to block page without char path segment
+            const queryString = searchParams.toString();
+            navigate(`/block/${block.slug}${queryString ? `?${queryString}` : ""}`);
           }}
           onToggleFav={handleToggleFavorite}
           isFav={favorites.includes(modalChar)}
