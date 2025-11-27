@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useLayoutEffect } from "react";
 import { Terminal, X, Copy, Heart } from "lucide-react";
 import { toHex, copyToClipboard, getCodeSnippets } from "~/lib/utils";
 
@@ -24,7 +24,60 @@ export function CharDetailModal({
   const snippets = getCodeSnippets(charCode);
 
   const previewRef = useRef<HTMLDivElement>(null);
+  const glyphRef = useRef<HTMLSpanElement>(null);
+  const glyphBoxRef = useRef<HTMLDivElement>(null);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [glyphScale, setGlyphScale] = useState(1);
+  const [extraWidth, setExtraWidth] = useState(0);
+
+  // Measure glyph and adjust sizing
+  useLayoutEffect(() => {
+    const glyphEl = glyphRef.current;
+    const boxEl = glyphBoxRef.current;
+
+    if (!glyphEl || !boxEl) return;
+
+    // Reset to measure natural size
+    setGlyphScale(1);
+    setExtraWidth(0);
+
+    // Use requestAnimationFrame to ensure layout is complete
+    requestAnimationFrame(() => {
+      const glyphWidth = glyphEl.scrollWidth;
+      const glyphHeight = glyphEl.scrollHeight;
+      // Box has p-6 (24px) padding on each side, so available space is box width minus padding
+      const boxPadding = 48; // 24px * 2
+      const boxAvailableWidth = boxEl.clientWidth - boxPadding;
+      const boxAvailableHeight = boxEl.clientHeight - boxPadding;
+
+      if (glyphWidth <= boxAvailableWidth && glyphHeight <= boxAvailableHeight) {
+        // Glyph fits, no adjustment needed
+        return;
+      }
+
+      // Calculate how much extra width we'd need to fit the glyph
+      const neededExtraWidth = Math.max(0, glyphWidth - boxAvailableWidth);
+      // Max extra width we can add (limit to ~150px to keep modal reasonable)
+      const maxExtraWidth = 150;
+      const actualExtraWidth = Math.min(neededExtraWidth, maxExtraWidth);
+
+      if (actualExtraWidth > 0 && neededExtraWidth <= maxExtraWidth) {
+        // We can fit by expanding the container
+        setExtraWidth(actualExtraWidth + 20); // Add some padding
+        return;
+      }
+
+      // Need to scale down the glyph
+      // Calculate scale based on both width and height constraints
+      const newBoxWidth = boxAvailableWidth + actualExtraWidth;
+      const widthScale = glyphWidth > newBoxWidth ? newBoxWidth / glyphWidth : 1;
+      const heightScale = glyphHeight > boxAvailableHeight ? boxAvailableHeight / glyphHeight : 1;
+      const scale = Math.min(widthScale, heightScale, 1) * 0.9; // 0.9 for some margin
+
+      setExtraWidth(actualExtraWidth);
+      setGlyphScale(scale);
+    });
+  }, [charCode]);
 
   const handleCopy = (text: string) => {
     copyToClipboard(text);
@@ -71,15 +124,21 @@ export function CharDetailModal({
 
         <div className="flex flex-col md:flex-row h-full overflow-y-auto md:overflow-visible custom-scrollbar">
           {/* Big Preview */}
-          <div className="md:w-1/3 bg-softcreme-98 dark:bg-darkzinc flex flex-col items-center justify-center min-h-[200px] md:min-h-[250px] border-b md:border-b-0 md:border-r border-softcreme-82 dark:border-darkzinc-12 relative shrink-0">
+          <div
+            className="bg-softcreme-98 dark:bg-darkzinc flex flex-col items-center justify-center min-h-[200px] md:min-h-[250px] border-b md:border-b-0 md:border-r border-softcreme-82 dark:border-darkzinc-12 relative shrink-0 md:min-w-[33%]"
+            style={{ width: extraWidth > 0 ? `calc(33% + ${extraWidth}px)` : undefined }}
+          >
             <div className="absolute inset-0 bg-olive-53/5 dark:bg-olive-65/5 z-0 pointer-events-none"></div>
 
             {/* Box around char for bounding box visibility */}
             <div
-              ref={previewRef}
+              ref={(el) => {
+                previewRef.current = el;
+                glyphBoxRef.current = el;
+              }}
               onMouseMove={handleMouseMove}
               onClick={() => handleCopy(char)}
-              className="group relative border border-dashed border-softcreme-70/60 dark:border-darkzinc-15/60 hover:border-olive-53 dark:hover:border-olive-65 hover:bg-olive-53/5 dark:hover:bg-olive-65/10 transition-all p-6 min-w-[100px] min-h-[100px] md:min-w-[120px] md:min-h-[120px] flex items-center justify-center cursor-pointer hover:cursor-none overflow-hidden"
+              className="group relative border border-dashed border-softcreme-70/60 dark:border-darkzinc-15/60 hover:border-olive-53 dark:hover:border-olive-65 hover:bg-olive-53/5 dark:hover:bg-olive-65/10 transition-all p-6 min-w-[100px] min-h-[100px] md:min-w-[120px] md:min-h-[120px] flex items-center justify-center cursor-pointer hover:cursor-none"
             >
               {/* Floating Cursor Badge */}
               <div
@@ -95,7 +154,11 @@ export function CharDetailModal({
                 </div>
               </div>
 
-              <span className="text-6xl md:text-9xl text-darkzinc-21 dark:text-lightslate-8 group-hover:text-olive-41 dark:group-hover:text-olive-65 transition-colors font-unicode select-none z-10 crt-flicker">
+              <span
+                ref={glyphRef}
+                className="text-6xl md:text-9xl text-darkzinc-21 dark:text-lightslate-8 group-hover:text-olive-41 dark:group-hover:text-olive-65 transition-colors font-unicode select-none z-10 crt-flicker"
+                style={glyphScale < 1 ? { transform: `scale(${glyphScale})`, transformOrigin: 'center' } : undefined}
+              >
                 {char}
               </span>
             </div>
