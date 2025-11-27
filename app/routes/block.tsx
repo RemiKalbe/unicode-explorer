@@ -1,16 +1,18 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { data, useNavigate } from "react-router";
+import { useState, useMemo, useCallback } from "react";
+import { data, useNavigate, useSearchParams } from "react-router";
 import MiniSearch from "minisearch";
 import type { Route } from "./+types/block";
 import {
   getBlockBySlug,
   getCharCodesForBlock,
   parseHexSearch,
+  parseCodePoint,
 } from "~/data/unicode-blocks";
 import { loadBlockNames, type CharacterNames } from "~/data/unicode-names.server";
 import { Sidebar } from "~/components/layout/Sidebar";
 import { MobileHeader, DesktopHeader } from "~/components/layout/Header";
 import { CharGrid } from "~/components/layout/CharGrid";
+import { CharDetailModal } from "~/components/ui/CharDetailModal";
 import { Toast } from "~/components/ui/Toast";
 import { useFavorites } from "~/hooks/useFavorites";
 import { toHex } from "~/lib/utils";
@@ -58,6 +60,11 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Get modal char from URL search params
+  const charParam = searchParams.get("char");
+  const modalChar = charParam ? parseCodePoint(charParam) : null;
 
   // Build MiniSearch index for character names
   const searchIndex = useMemo(() => {
@@ -145,11 +152,29 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
           <CharGrid
             charCodes={charCodes}
             favorites={favorites}
-            onCharClick={(code) => navigate(`/char/${toHex(code)}`)}
+            onCharClick={(code) => {
+              // Update URL with char param to open modal
+              setSearchParams({ char: toHex(code) });
+            }}
             onToggleFav={handleToggleFavorite}
           />
         </div>
       </main>
+
+      {/* Detail Modal - shown when char param is in URL */}
+      {modalChar !== null && (
+        <CharDetailModal
+          charCode={modalChar}
+          charName={getCharName(names, modalChar)}
+          onClose={() => {
+            // Remove char param to close modal
+            setSearchParams({});
+          }}
+          onToggleFav={handleToggleFavorite}
+          isFav={favorites.includes(modalChar)}
+          onCopy={() => showToast("Copied to clipboard")}
+        />
+      )}
 
       {/* Toast Notification */}
       {toastMsg && (

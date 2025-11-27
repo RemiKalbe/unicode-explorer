@@ -1,9 +1,11 @@
 import { useState, useCallback } from "react";
-import { useNavigate } from "react-router";
+import { useSearchParams } from "react-router";
 import type { Route } from "./+types/favorites";
+import { parseCodePoint } from "~/data/unicode-blocks";
 import { Sidebar } from "~/components/layout/Sidebar";
 import { MobileHeader, DesktopHeader } from "~/components/layout/Header";
 import { CharGrid } from "~/components/layout/CharGrid";
+import { CharDetailModal } from "~/components/ui/CharDetailModal";
 import { Toast } from "~/components/ui/Toast";
 import { useFavorites } from "~/hooks/useFavorites";
 import { toHex } from "~/lib/utils";
@@ -23,7 +25,11 @@ export default function FavoritesPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Get modal char from URL search params
+  const charParam = searchParams.get("char");
+  const modalChar = charParam ? parseCodePoint(charParam) : null;
 
   // Auto-open sidebar on desktop
   useState(() => {
@@ -67,13 +73,30 @@ export default function FavoritesPage() {
           <CharGrid
             charCodes={favorites}
             favorites={favorites}
-            onCharClick={(code) => navigate(`/char/${toHex(code)}`)}
+            onCharClick={(code) => {
+              // Update URL with char param to open modal
+              setSearchParams({ char: toHex(code) });
+            }}
             onToggleFav={handleToggleFavorite}
             emptyMessage="Memory Empty"
             emptySubMessage="Mark sectors to save"
           />
         </div>
       </main>
+
+      {/* Detail Modal - shown when char param is in URL */}
+      {modalChar !== null && (
+        <CharDetailModal
+          charCode={modalChar}
+          onClose={() => {
+            // Remove char param to close modal
+            setSearchParams({});
+          }}
+          onToggleFav={handleToggleFavorite}
+          isFav={favorites.includes(modalChar)}
+          onCopy={() => showToast("Copied to clipboard")}
+        />
+      )}
 
       {/* Toast Notification */}
       {toastMsg && (
