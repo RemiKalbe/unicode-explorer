@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+@theme {
+  --color-darkzinc-3: #1b1c1d;
+  --color-darkzinc-6: #222325;
+  --color-darkzinc-9: #2a2b2d;
+  --color-darkzinc-12: #313235;
+  --color-darkzinc-15: #383a3d;
+  --color-darkzinc-18: #404145;
+  --color-darkzinc-21: #47494d;
+  --color-darkzinc: #141516;
+
+  --color-lightslate-3: #e9eaed;
+  --color-lightslate-5: #e3e5e8;
+  --color-lightslate-8: #dbdde1;
+  --color-lightslate-11: #d2d5da;
+  --color-lightslate-14: #cad0d8;
+  --color-lightslate-17: #bec3ca;
+  --color-lightslate-20: #b6bbc3;
+  --color-lightslate: #f0f2f4;
+
+  --color-lightzinc-10: #767980;
+  --color-lightzinc-20: #8d9199;
+  --color-lightzinc-30: #a5a9b2;
+  --color-lightzinc-40: #bcc1cc;
+  --color-lightzinc-50: #d4dae5;
+  --color-lightzinc-60: #ebf2ff;
+  --color-lightzinc: #5e6166;
+
+  --color-olive-6: #091105;
+  --color-olive-12: #12220d;
+  --color-olive-18: #1c3314;
+  --color-olive-24: #27431c;
+  --color-olive-29: #325427;
+  --color-olive-35: #3e6331;
+  --color-olive-41: #4c723e;
+  --color-olive-47: #59824a;
+  --color-olive-53: #679059;
+  --color-olive-59: #779f69;
+  --color-olive-65: #87ad7a;
+  --color-olive-71: #99bb8c;
+  --color-olive-76: #abc99f;
+  --color-olive-82: #bed7b6;
+  --color-olive-88: #d3e4cd;
+  --color-olive-94: #e8f1e4;
+
+  --color-softcreme-70: #c6c69f;
+  --color-softcreme-72: #cdcda2;
+  --color-softcreme-74: #d4d4a5;
+  --color-softcreme-76: #dadaa9;
+  --color-softcreme-78: #e0e0ae;
+  --color-softcreme-80: #e5e5b3;
+  --color-softcreme-82: #eaeab8;
+  --color-softcreme-84: #efefbe;
+  --color-softcreme-86: #f3f3c4;
+  --color-softcreme-88: #f6f6cb;
+  --color-softcreme-90: #f9f9d2;
+  --color-softcreme-92: #fbfbda;
+  --color-softcreme-94: #fdfde3;
+  --color-softcreme-96: #fefeec;
+  --color-softcreme-98: #fffff5;
+  --color-softcreme-99: #fffffb;
+
+  --color-jean-700: #3a63a1;
+}
+
+/* Custom scrollbar - Light Theme */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-softcreme-98);
+  border-left: 1px solid var(--color-softcreme-82);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-softcreme-72);
+  border: 4px solid var(--color-softcreme-98);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-olive-53);
+}
+
+.custom-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: var(--color-softcreme-72) var(--color-softcreme-98);
+}
+
+/* Dark Mode Scrollbar */
+@media (prefers-color-scheme: dark) {
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--color-darkzinc);
+    border-left: 1px solid var(--color-darkzinc-6);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-darkzinc-21);
+    border: 4px solid var(--color-darkzinc);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--color-olive-53);
+  }
+
+  .custom-scrollbar {
+    scrollbar-color: var(--color-darkzinc-21) var(--color-darkzinc);
+  }
+
+  .crt-overlay {
+    background: linear-gradient(
+        rgba(18, 18, 18, 0) 50%,
+        rgba(0, 0, 0, 0.25) 50%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 0.06),
+        rgba(0, 255, 0, 0.02),
+        rgba(0, 0, 255, 0.06)
+      );
+    background-size: 100% 4px, 6px 100%;
+    mix-blend-mode: hard-light;
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .crt-overlay {
+    background: linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.02) 50%),
+      linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.01),
+        rgba(0, 0, 0, 0.005),
+        rgba(0, 0, 0, 0.01)
+      );
+    background-size: 100% 3px, 3px 100%;
+    mix-blend-mode: multiply;
+    opacity: 0.05;
+  }
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.98;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.99;
+  }
+}
+
+.crt-flicker {
+  animation: flicker 0.15s infinite;
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-from-bottom {
+  animation: slide-in-from-bottom 0.3s ease-out;
+}
