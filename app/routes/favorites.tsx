@@ -10,29 +10,9 @@ import { Toast } from "~/components/ui/Toast";
 import { useFavorites } from "~/hooks/useFavorites";
 import { toHex } from "~/lib/utils";
 
-// Base URL for canonical links
-const BASE_URL = process.env.SITE_URL || "https://utf.lab.remi.boo";
-
 export function meta({}: Route.MetaArgs) {
-  const canonicalUrl = `${BASE_URL}/favorites`;
-  const description = "View your bookmarked Unicode characters.";
-
   return [
     { title: "Favorites - Unicode Explorer" },
-    { name: "description", content: description },
-    // Canonical URL
-    { tagName: "link", rel: "canonical", href: canonicalUrl },
-    // Open Graph
-    { property: "og:title", content: "Favorites - Unicode Explorer" },
-    { property: "og:description", content: description },
-    { property: "og:type", content: "website" },
-    { property: "og:url", content: canonicalUrl },
-    { property: "og:site_name", content: "Unicode Explorer" },
-    // Twitter Card
-    { name: "twitter:card", content: "summary" },
-    { name: "twitter:title", content: "Favorites - Unicode Explorer" },
-    { name: "twitter:description", content: description },
-    // Robots - don't index favorites page as it's user-specific
     { name: "robots", content: "noindex, follow" },
   ];
 }
