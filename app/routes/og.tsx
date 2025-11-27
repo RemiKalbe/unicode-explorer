@@ -1,6 +1,6 @@
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Route } from "./+types/og";
 import {
@@ -12,25 +12,60 @@ import { toHex } from "~/lib/utils";
 
 // Load fonts at module initialization
 // Try production path first (build/client/fonts), then fallback to dev path (public/fonts)
-function loadFontFile(filename: string): Buffer {
-  const prodPath = join(process.cwd(), "build/client/fonts", filename);
-  const devPath = join(process.cwd(), "public/fonts", filename);
+function getFontsDir(): string {
+  const prodPath = join(process.cwd(), "build/client/fonts");
+  const devPath = join(process.cwd(), "public/fonts");
 
   if (existsSync(prodPath)) {
-    return readFileSync(prodPath);
+    return prodPath;
   }
-  return readFileSync(devPath);
+  return devPath;
 }
 
-// Load all fonts for broad Unicode coverage
-// Use Noto Serif to match the website's font-serif styling for characters
-// Noto Sans Symbols 2 covers Alchemical Symbols, Chess, Dingbats, and many specialized blocks
-// Noto Sans Symbols covers additional symbol ranges
-const jetBrainsMonoFont = loadFontFile("JetBrainsMono-Regular.ttf");
-const notoSerifFont = loadFontFile("NotoSerif-Regular.ttf");
-const notoEmojiFont = loadFontFile("NotoEmoji-Regular.ttf");
-const notoSansSymbols2Font = loadFontFile("NotoSansSymbols2-Regular.ttf");
-const notoSansSymbolsFont = loadFontFile("NotoSansSymbols-Regular.ttf");
+function loadFontFile(fontsDir: string, filename: string): Buffer {
+  return readFileSync(join(fontsDir, filename));
+}
+
+// Dynamically load all TTF fonts from the fonts directory
+function loadAllFonts(): { name: string; data: Buffer; weight: number; style: string }[] {
+  const fontsDir = getFontsDir();
+  const fontFiles = readdirSync(fontsDir).filter(f => f.endsWith('.ttf'));
+
+  const fonts: { name: string; data: Buffer; weight: number; style: string }[] = [];
+
+  for (const file of fontFiles) {
+    try {
+      const data = loadFontFile(fontsDir, file);
+      // Extract font name from filename (e.g., "NotoSansJP-0.ttf" -> "Noto Sans JP 0")
+      const baseName = file.replace('.ttf', '');
+      // Convert to readable name with spaces
+      const name = baseName
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/^[\s-]+/, '')
+        .replace(/-/g, ' ')
+        .trim();
+
+      fonts.push({
+        name,
+        data,
+        weight: 400,
+        style: "normal" as const,
+      });
+    } catch (err) {
+      console.error(`Failed to load font ${file}:`, err);
+    }
+  }
+
+  console.log(`Loaded ${fonts.length} fonts for OG image generation`);
+  return fonts;
+}
+
+// Load all fonts at module initialization
+const allFonts = loadAllFonts();
+
+// Build the font-family string for character rendering
+// Order matters: more specific fonts first, then fallbacks
+const characterFontFamily = allFonts.map(f => f.name).join(', ');
 
 export async function loader({ params }: Route.LoaderArgs) {
   const codepoint = params.codepoint;
@@ -73,7 +108,7 @@ export async function loader({ params }: Route.LoaderArgs) {
         height: "100%",
         backgroundColor: bgColor,
         padding: "48px",
-        fontFamily: "JetBrains Mono",
+        fontFamily: "Noto Sans",
       }}
     >
       {/* Main card */}
@@ -154,7 +189,7 @@ export async function loader({ params }: Route.LoaderArgs) {
                   fontSize: "180px",
                   color: textColor,
                   lineHeight: 1,
-                  fontFamily: "Noto Sans Symbols 2, Noto Sans Symbols, Noto Emoji, Noto Serif, JetBrains Mono",
+                  fontFamily: characterFontFamily,
                 }}
               >
                 {char}
@@ -215,38 +250,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     {
       width: 1200,
       height: 630,
-      fonts: [
-        {
-          name: "JetBrains Mono",
-          data: jetBrainsMonoFont,
-          weight: 400,
-          style: "normal",
-        },
-        {
-          name: "Noto Serif",
-          data: notoSerifFont,
-          weight: 400,
-          style: "normal",
-        },
-        {
-          name: "Noto Emoji",
-          data: notoEmojiFont,
-          weight: 400,
-          style: "normal",
-        },
-        {
-          name: "Noto Sans Symbols 2",
-          data: notoSansSymbols2Font,
-          weight: 400,
-          style: "normal",
-        },
-        {
-          name: "Noto Sans Symbols",
-          data: notoSansSymbolsFont,
-          weight: 400,
-          style: "normal",
-        },
-      ],
+      fonts: allFonts,
     }
   );
 

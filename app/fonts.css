@@ -1,0 +1,122 @@
+/**
+ * Unicode Explorer - Comprehensive Font Setup
+ * Uses fontsource packages with unicode-range for efficient loading
+ */
+
+/* === LATIN & EUROPEAN === */
+@import "@fontsource/noto-sans/400.css";
+@import "@fontsource/noto-sans-armenian/400.css";
+@import "@fontsource/noto-sans-georgian/400.css";
+
+/* === MIDDLE EAST === */
+@import "@fontsource/noto-sans-arabic/400.css";
+@import "@fontsource/noto-sans-hebrew/400.css";
+@import "@fontsource/noto-sans-syriac/400.css";
+@import "@fontsource/noto-sans-thaana/400.css";
+
+/* === SOUTH ASIA === */
+@import "@fontsource/noto-sans-devanagari/400.css";
+@import "@fontsource/noto-sans-bengali/400.css";
+@import "@fontsource/noto-sans-gurmukhi/400.css";
+@import "@fontsource/noto-sans-gujarati/400.css";
+@import "@fontsource/noto-sans-oriya/400.css";
+@import "@fontsource/noto-sans-tamil/400.css";
+@import "@fontsource/noto-sans-telugu/400.css";
+@import "@fontsource/noto-sans-kannada/400.css";
+@import "@fontsource/noto-sans-malayalam/400.css";
+@import "@fontsource/noto-sans-sinhala/400.css";
+
+/* === SE ASIA === */
+@import "@fontsource/noto-sans-thai/400.css";
+@import "@fontsource/noto-sans-lao/400.css";
+@import "@fontsource/noto-sans-myanmar/400.css";
+@import "@fontsource/noto-sans-khmer/400.css";
+@import "@fontsource/noto-sans-tagalog/400.css";
+
+/* === EAST ASIA (CJK) === */
+@import "@fontsource/noto-sans-jp/400.css";
+@import "@fontsource/noto-sans-sc/400.css";
+@import "@fontsource/noto-sans-tc/400.css";
+@import "@fontsource/noto-sans-kr/400.css";
+@import "@fontsource/noto-sans-mongolian/400.css";
+@import "@fontsource/noto-sans-yi/400.css";
+
+/* === AFRICA === */
+@import "@fontsource/noto-sans-ethiopic/400.css";
+@import "@fontsource/noto-sans-nko/400.css";
+
+/* === AMERICAS === */
+@import "@fontsource/noto-sans-cherokee/400.css";
+@import "@fontsource/noto-sans-canadian-aboriginal/400.css";
+
+/* === HISTORIC === */
+@import "@fontsource/noto-sans-ogham/400.css";
+@import "@fontsource/noto-sans-runic/400.css";
+@import "@fontsource/noto-sans-linear-b/400.css";
+
+/* === SYMBOLS === */
+@import "@fontsource/noto-sans-symbols/400.css";
+@import "@fontsource/noto-sans-symbols-2/400.css";
+@import "@fontsource/noto-sans-math/400.css";
+@import "@fontsource/noto-emoji/400.css";
+
+/**
+ * Unicode character display font stack
+ * Order: Symbols first (for special chars), then regional fonts, then fallbacks
+ */
+.font-unicode {
+  font-family:
+    /* Symbols and special characters */
+    "Noto Sans Symbols 2",
+    "Noto Sans Symbols",
+    "Noto Sans Math",
+    "Noto Emoji",
+    /* CJK */
+    "Noto Sans JP",
+    "Noto Sans SC",
+    "Noto Sans TC",
+    "Noto Sans KR",
+    /* South Asian */
+    "Noto Sans Devanagari",
+    "Noto Sans Bengali",
+    "Noto Sans Tamil",
+    "Noto Sans Telugu",
+    "Noto Sans Kannada",
+    "Noto Sans Malayalam",
+    "Noto Sans Gujarati",
+    "Noto Sans Gurmukhi",
+    "Noto Sans Oriya",
+    "Noto Sans Sinhala",
+    /* SE Asian */
+    "Noto Sans Thai",
+    "Noto Sans Lao",
+    "Noto Sans Myanmar",
+    "Noto Sans Khmer",
+    "Noto Sans Tagalog",
+    /* Middle East */
+    "Noto Sans Arabic",
+    "Noto Sans Hebrew",
+    "Noto Sans Syriac",
+    "Noto Sans Thaana",
+    /* East Asian (non-CJK) */
+    "Noto Sans Mongolian",
+    "Noto Sans Yi",
+    /* African */
+    "Noto Sans Ethiopic",
+    "Noto Sans NKo",
+    /* European */
+    "Noto Sans Armenian",
+    "Noto Sans Georgian",
+    /* Americas */
+    "Noto Sans Cherokee",
+    "Noto Sans Canadian Aboriginal",
+    /* Historic */
+    "Noto Sans Ogham",
+    "Noto Sans Runic",
+    "Noto Sans Linear B",
+    /* Base Latin/Cyrillic/Greek */
+    "Noto Sans",
+    /* System fallbacks */
+    system-ui,
+    sans-serif;
+}

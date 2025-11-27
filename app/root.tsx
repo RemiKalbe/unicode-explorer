@@ -10,6 +10,7 @@ import {
 import type { Route } from "./+types/root";
 import { useDynamicFavicon } from "./hooks/useDynamicFavicon";
 import "./app.css";
+import "./fonts.css";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
