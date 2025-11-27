@@ -33,7 +33,7 @@ export function meta({ data }: Route.MetaArgs) {
 
   const { block, selectedChar } = data;
 
-  // If a character is selected via ?char= param, show character-specific meta
+  // If a character is selected via ?char= param, show character-specific meta with OG image
   if (selectedChar) {
     const { hex, char, charName } = selectedChar;
     const title = charName

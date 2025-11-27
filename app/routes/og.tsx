@@ -1,5 +1,7 @@
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
 import type { Route } from "./+types/og";
 import {
   getBlockByCodePoint,
@@ -8,21 +10,19 @@ import {
 import { loadCharacterName } from "~/data/unicode-names.server";
 import { toHex } from "~/lib/utils";
 
-// Cache the font data
-let fontData: ArrayBuffer | null = null;
+// Load font at module initialization
+// Try production path first (build/client/fonts), then fallback to dev path (public/fonts)
+function loadFontData(): Buffer {
+  const prodPath = join(process.cwd(), "build/client/fonts/JetBrainsMono-Regular.ttf");
+  const devPath = join(process.cwd(), "public/fonts/JetBrainsMono-Regular.ttf");
 
-async function loadFont(): Promise<ArrayBuffer> {
-  if (fontData) {
-    return fontData;
+  if (existsSync(prodPath)) {
+    return readFileSync(prodPath);
   }
-
-  // Fetch JetBrains Mono font
-  const response = await fetch(
-    "https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.woff"
-  );
-  fontData = await response.arrayBuffer();
-  return fontData;
+  return readFileSync(devPath);
 }
+
+const fontData = loadFontData();
 
 export async function loader({ params }: Route.LoaderArgs) {
   const codepoint = params.codepoint;
@@ -46,9 +46,6 @@ export async function loader({ params }: Route.LoaderArgs) {
   const charName = loadCharacterName(block.slug, charCode);
   const hex = toHex(charCode);
   const char = String.fromCodePoint(charCode);
-
-  // Load font
-  const font = await loadFont();
 
   // Design colors (dark theme)
   const bgColor = "#141516"; // darkzinc
@@ -212,7 +209,7 @@ export async function loader({ params }: Route.LoaderArgs) {
       fonts: [
         {
           name: "JetBrains Mono",
-          data: font,
+          data: fontData,
           weight: 400,
           style: "normal",
         },
