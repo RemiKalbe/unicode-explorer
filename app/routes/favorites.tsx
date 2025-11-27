@@ -15,7 +15,7 @@ const BASE_URL = process.env.SITE_URL || "https://utf.lab.remi.boo";
 
 export function meta({}: Route.MetaArgs) {
   const canonicalUrl = `${BASE_URL}/favorites`;
-  const description = "Save and organize your favorite Unicode characters. Quickly access frequently used symbols, emojis, and special characters.";
+  const description = "Your saved Unicode characters for quick access.";
 
   return [
     { title: "Favorites - Unicode Explorer" },
