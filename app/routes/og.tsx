@@ -24,9 +24,13 @@ function loadFontFile(filename: string): Buffer {
 
 // Load all fonts for broad Unicode coverage
 // Use Noto Serif to match the website's font-serif styling for characters
+// Noto Sans Symbols 2 covers Alchemical Symbols, Chess, Dingbats, and many specialized blocks
+// Noto Sans Symbols covers additional symbol ranges
 const jetBrainsMonoFont = loadFontFile("JetBrainsMono-Regular.ttf");
 const notoSerifFont = loadFontFile("NotoSerif-Regular.ttf");
 const notoEmojiFont = loadFontFile("NotoEmoji-Regular.ttf");
+const notoSansSymbols2Font = loadFontFile("NotoSansSymbols2-Regular.ttf");
+const notoSansSymbolsFont = loadFontFile("NotoSansSymbols-Regular.ttf");
 
 export async function loader({ params }: Route.LoaderArgs) {
   const codepoint = params.codepoint;
@@ -150,7 +154,7 @@ export async function loader({ params }: Route.LoaderArgs) {
                   fontSize: "180px",
                   color: textColor,
                   lineHeight: 1,
-                  fontFamily: "Noto Emoji, Noto Serif, JetBrains Mono",
+                  fontFamily: "Noto Sans Symbols 2, Noto Sans Symbols, Noto Emoji, Noto Serif, JetBrains Mono",
                 }}
               >
                 {char}
@@ -227,6 +231,18 @@ export async function loader({ params }: Route.LoaderArgs) {
         {
           name: "Noto Emoji",
           data: notoEmojiFont,
+          weight: 400,
+          style: "normal",
+        },
+        {
+          name: "Noto Sans Symbols 2",
+          data: notoSansSymbols2Font,
+          weight: 400,
+          style: "normal",
+        },
+        {
+          name: "Noto Sans Symbols",
+          data: notoSansSymbolsFont,
           weight: 400,
           style: "normal",
         },
