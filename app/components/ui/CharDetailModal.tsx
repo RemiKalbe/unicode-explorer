@@ -4,6 +4,7 @@ import { toHex, copyToClipboard, getCodeSnippets } from "~/lib/utils";
 
 interface CharDetailModalProps {
   charCode: number;
+  charName?: string;
   onClose: () => void;
   onToggleFav: (code: number) => void;
   isFav: boolean;
@@ -12,6 +13,7 @@ interface CharDetailModalProps {
 
 export function CharDetailModal({
   charCode,
+  charName,
   onClose,
   onToggleFav,
   isFav,
@@ -50,9 +52,14 @@ export function CharDetailModal({
       >
         {/* Terminal Header Bar */}
         <div className="bg-softcreme-94 dark:bg-darkzinc-6 border-b border-softcreme-82 dark:border-darkzinc-12 p-2 flex items-center justify-between select-none shrink-0">
-          <div className="flex items-center gap-2 text-olive-41 dark:text-olive-65 text-xs font-bold uppercase tracking-wide pl-2">
-            <Terminal size={14} />
-            <span>Inspector :: U+{hex}</span>
+          <div className="flex items-center gap-2 text-olive-41 dark:text-olive-65 text-xs font-bold uppercase tracking-wide pl-2 min-w-0">
+            <Terminal size={14} className="shrink-0" />
+            <span className="shrink-0">Inspector :: U+{hex}</span>
+            {charName && (
+              <span className="text-lightzinc-10 dark:text-lightzinc-20 font-normal truncate" title={charName}>
+                {charName}
+              </span>
+            )}
           </div>
           <button
             onClick={onClose}

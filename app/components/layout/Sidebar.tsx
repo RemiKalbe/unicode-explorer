@@ -78,7 +78,7 @@ export function Sidebar({
             </div>
             <input
               type="text"
-              placeholder="Search blocks or Hex..."
+              placeholder="Search blocks, hex, or name..."
               className="w-full bg-softcreme-98 dark:bg-darkzinc-9/50 border border-softcreme-70 dark:border-darkzinc-21 py-3 pl-9 pr-4 text-base lg:text-xs font-medium text-darkzinc-6 dark:text-olive-53 focus:outline-none focus:border-olive-53 dark:focus:border-olive-65 focus:bg-softcreme-98 dark:focus:bg-black transition-colors placeholder:text-lightzinc-10 dark:placeholder:text-lightzinc-10 rounded-none appearance-none"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
