@@ -267,6 +267,7 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
           <CharGrid
             charCodes={charCodes}
             favorites={favorites}
+            blockSlug={block.slug}
             onCharClick={(code) => {
               // Navigate to character path to open modal
               const charHex = toHex(code);
