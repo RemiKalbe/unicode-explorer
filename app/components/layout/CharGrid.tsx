@@ -1,8 +1,12 @@
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Heart } from "lucide-react";
 import { CharCard } from "~/components/ui/CharCard";
 
-const ITEMS_PER_PAGE = 200;
+// Cell sizes: 60px on mobile, 100px on desktop (md breakpoint = 768px)
+const CELL_SIZE_MOBILE = 60;
+const CELL_SIZE_DESKTOP = 100;
+const GAP = 1; // 1px gap between cells
 
 interface CharGridProps {
   charCodes: number[];
@@ -21,41 +25,56 @@ export function CharGrid({
   emptyMessage = "No data found",
   emptySubMessage,
 }: CharGridProps) {
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
-  const observerTarget = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(false);
 
-  // Reset visible count when charCodes change
+  // Track container width and viewport size
   useEffect(() => {
-    setVisibleCount(ITEMS_PER_PAGE);
-  }, [charCodes]);
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+      setIsDesktop(window.innerWidth >= 768);
+    };
 
-  const displayChars = useMemo(() => {
-    return charCodes.slice(0, visibleCount);
-  }, [charCodes, visibleCount]);
+    updateDimensions();
 
-  // Infinite scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          if (displayChars.length < charCodes.length) {
-            setVisibleCount((prev) => prev + ITEMS_PER_PAGE);
-          }
-        }
-      },
-      { threshold: 0.1, rootMargin: "100px" }
-    );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
     }
 
+    window.addEventListener("resize", updateDimensions);
+
     return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
-      }
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateDimensions);
     };
-  }, [displayChars.length, charCodes.length]);
+  }, []);
+
+  // Calculate grid dimensions
+  const cellSize = isDesktop ? CELL_SIZE_DESKTOP : CELL_SIZE_MOBILE;
+  const columnCount = useMemo(() => {
+    if (containerWidth === 0) return 1;
+    // Calculate how many cells fit: (width + gap) / (cellSize + gap)
+    return Math.max(1, Math.floor((containerWidth + GAP) / (cellSize + GAP)));
+  }, [containerWidth, cellSize]);
+
+  const rowCount = useMemo(() => {
+    return Math.ceil(charCodes.length / columnCount);
+  }, [charCodes.length, columnCount]);
+
+  // Create a Set for O(1) favorite lookups
+  const favoritesSet = useMemo(() => new Set(favorites), [favorites]);
+
+  // Virtualizer for rows
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => containerRef.current,
+    estimateSize: useCallback(() => cellSize + GAP, [cellSize]),
+    overscan: 5, // Render 5 extra rows above/below for smoother scrolling
+  });
 
   if (charCodes.length === 0) {
     return (
@@ -76,33 +95,62 @@ export function CharGrid({
     );
   }
 
-  return (
-    <>
-      {/* Grid Container */}
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(60px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(100px,1fr))] gap-px bg-softcreme-90 dark:bg-darkzinc-6 border border-softcreme-90 dark:border-darkzinc-6">
-        {displayChars.map((code) => (
-          <CharCard
-            key={code}
-            charCode={code}
-            isFav={favorites.includes(code)}
-            onClick={onCharClick}
-            onFav={onToggleFav}
-          />
-        ))}
-      </div>
+  const virtualRows = rowVirtualizer.getVirtualItems();
 
-      {/* Infinite Scroll Trigger */}
+  return (
+    <div
+      ref={containerRef}
+      className="h-full overflow-auto custom-scrollbar"
+      style={{ contain: "strict" }}
+    >
+      {/* Virtual scroll container */}
       <div
-        ref={observerTarget}
-        className="w-full h-24 flex items-center justify-center mt-8"
+        className="relative w-full border border-softcreme-90 dark:border-darkzinc-6 bg-softcreme-90 dark:bg-darkzinc-6"
+        style={{
+          height: `${rowVirtualizer.getTotalSize()}px`,
+        }}
       >
-        {displayChars.length < charCodes.length && (
-          <div className="flex items-center gap-2 text-olive-41/70 dark:text-olive-65/70 text-xs bg-softcreme-94 dark:bg-darkzinc-9/50 px-4 py-2 border border-olive-53/30 dark:border-olive-65/30">
-            <span className="animate-spin font-serif">/</span>
-            Fetching data stream...
-          </div>
-        )}
+        {virtualRows.map((virtualRow) => {
+          const rowStartIndex = virtualRow.index * columnCount;
+          const rowItems: number[] = [];
+
+          for (let col = 0; col < columnCount; col++) {
+            const itemIndex = rowStartIndex + col;
+            if (itemIndex < charCodes.length) {
+              rowItems.push(charCodes[itemIndex]);
+            }
+          }
+
+          return (
+            <div
+              key={virtualRow.key}
+              className="absolute left-0 right-0 flex"
+              style={{
+                top: `${virtualRow.start}px`,
+                height: `${cellSize}px`,
+                gap: `${GAP}px`,
+              }}
+            >
+              {rowItems.map((code) => (
+                <div
+                  key={code}
+                  style={{
+                    width: `${cellSize}px`,
+                    height: `${cellSize}px`,
+                  }}
+                >
+                  <CharCard
+                    charCode={code}
+                    isFav={favoritesSet.has(code)}
+                    onClick={onCharClick}
+                    onFav={onToggleFav}
+                  />
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
-    </>
+    </div>
   );
 }

@@ -265,7 +265,7 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
           range={isShowingAllResults ? undefined : { start: block.start, end: block.end }}
         />
 
-        <div className="flex-1 overflow-y-auto p-2 lg:p-6 custom-scrollbar">
+        <div className="flex-1 overflow-hidden p-2 lg:p-6">
           <CharGrid
             charCodes={charCodes}
             favorites={favorites}
