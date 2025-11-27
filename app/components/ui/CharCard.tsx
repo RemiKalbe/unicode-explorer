@@ -25,7 +25,7 @@ export const CharCard = memo(function CharCard({
       {/* Content - Wrapped in a bounding box to show invisible chars */}
       <div className="relative z-10 w-full flex-1 flex items-center justify-center mb-1">
         <div className="min-w-[2em] min-h-[2em] flex items-center justify-center border border-dashed border-softcreme-70/30 dark:border-darkzinc-15/40 group-hover:border-transparent rounded-sm transition-colors">
-          <span className="text-2xl md:text-4xl text-darkzinc-21 dark:text-lightslate-8 group-hover:text-olive-41 dark:group-hover:text-olive-65 font-serif text-center leading-none transition-colors crt-flicker">
+          <span className="text-2xl md:text-4xl text-darkzinc-21 dark:text-lightslate-8 group-hover:text-olive-41 dark:group-hover:text-olive-65 font-unicode text-center leading-none transition-colors crt-flicker">
             {char}
           </span>
         </div>

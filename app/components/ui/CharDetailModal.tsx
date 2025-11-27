@@ -95,7 +95,7 @@ export function CharDetailModal({
                 </div>
               </div>
 
-              <span className="text-6xl md:text-9xl text-darkzinc-21 dark:text-lightslate-8 group-hover:text-olive-41 dark:group-hover:text-olive-65 transition-colors font-serif select-none z-10 crt-flicker">
+              <span className="text-6xl md:text-9xl text-darkzinc-21 dark:text-lightslate-8 group-hover:text-olive-41 dark:group-hover:text-olive-65 transition-colors font-unicode select-none z-10 crt-flicker">
                 {char}
               </span>
             </div>
