@@ -269,6 +269,7 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
           <CharGrid
             charCodes={charCodes}
             favorites={favorites}
+            blockSlug={block.slug}
             onCharClick={(code) => {
               // Update URL with char param to open modal
               const params = new URLSearchParams(searchParams);
