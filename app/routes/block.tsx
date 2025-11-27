@@ -1,18 +1,19 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { data } from "react-router";
+import MiniSearch from "minisearch";
 import type { Route } from "./+types/block";
 import {
   getBlockBySlug,
   getCharCodesForBlock,
   parseHexSearch,
 } from "~/data/unicode-blocks";
+import { loadBlockNames, type CharacterNames } from "~/data/unicode-names.server";
 import { Sidebar } from "~/components/layout/Sidebar";
 import { MobileHeader, DesktopHeader } from "~/components/layout/Header";
 import { CharGrid } from "~/components/layout/CharGrid";
 import { CharDetailModal } from "~/components/ui/CharDetailModal";
 import { Toast } from "~/components/ui/Toast";
 import { useFavorites } from "~/hooks/useFavorites";
-import { useCharacterNames, searchByName } from "~/hooks/useCharacterNames";
 
 export function meta({ data }: Route.MetaArgs) {
   if (!data) {
@@ -37,17 +38,47 @@ export function loader({ params }: Route.LoaderArgs) {
     throw data(null, { status: 404, statusText: "Block not found" });
   }
 
-  return { block };
+  // Load character names server-side
+  const names = loadBlockNames(block.slug);
+
+  return { block, names };
+}
+
+// Helper to get character name from names object
+function getCharName(names: CharacterNames, charCode: number): string | undefined {
+  const hex = charCode.toString(16).toUpperCase();
+  return names[hex];
 }
 
 export default function BlockPage({ loaderData }: Route.ComponentProps) {
-  const { block } = loaderData;
+  const { block, names } = loaderData;
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [modalChar, setModalChar] = useState<number | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
-  const { names, getName } = useCharacterNames(block.slug);
+
+  // Build MiniSearch index for character names
+  const searchIndex = useMemo(() => {
+    const index = new MiniSearch<{ id: string; name: string; code: number }>({
+      fields: ["name"],
+      storeFields: ["code"],
+      searchOptions: {
+        prefix: true,
+        fuzzy: 0.2,
+      },
+    });
+
+    // Convert names to documents for indexing
+    const docs = Object.entries(names).map(([hex, name]) => ({
+      id: hex,
+      name,
+      code: parseInt(hex, 16),
+    }));
+
+    index.addAll(docs);
+    return index;
+  }, [names]);
 
   // Auto-open sidebar on desktop
   useState(() => {
@@ -75,14 +106,14 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
         return [hexMatch];
       }
 
-      // Search by character name
-      const nameMatches = searchByName(names, searchQuery);
-      if (nameMatches.length > 0) {
-        return nameMatches;
+      // Search by character name using MiniSearch
+      const results = searchIndex.search(searchQuery);
+      if (results.length > 0) {
+        return results.map((r) => r.code as number).sort((a, b) => a - b);
       }
     }
     return getCharCodesForBlock(block);
-  }, [block, searchQuery, names]);
+  }, [block, searchQuery, searchIndex]);
 
   return (
     <div className="flex h-screen bg-softcreme-98 dark:bg-darkzinc text-darkzinc-21 dark:text-lightzinc-40 font-mono overflow-hidden relative selection:bg-olive-88 dark:selection:bg-olive-35 selection:text-olive-41 dark:selection:text-olive-82">
@@ -123,7 +154,7 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
       {modalChar !== null && (
         <CharDetailModal
           charCode={modalChar}
-          charName={getName(modalChar)}
+          charName={getCharName(names, modalChar)}
           onClose={() => setModalChar(null)}
           onToggleFav={handleToggleFavorite}
           isFav={favorites.includes(modalChar)}

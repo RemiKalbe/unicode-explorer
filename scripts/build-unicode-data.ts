@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(__dirname, "..");
-const OUTPUT_DIR = join(PROJECT_ROOT, "public", "unicode-data");
+const OUTPUT_DIR = join(PROJECT_ROOT, "app", "data", "unicode-names");
 const CACHE_DIR = join(PROJECT_ROOT, ".unicode-cache");
 
 // UCD XML download URL (flat version without Unihan - smaller and easier to parse)

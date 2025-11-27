@@ -6,6 +6,8 @@ node_modules
 /.react-router
 /.unicode-cache
 
+# Note: app/data/unicode-names/*.json are generated but committed for SSR
+
 # Environment
 .env
 .env.*
