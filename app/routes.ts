@@ -5,4 +5,5 @@ export default [
   route("block/:blockSlug", "routes/block.tsx"),
   route("char/:codepoint", "routes/char.tsx"),
   route("favorites", "routes/favorites.tsx"),
+  route("og/:codepoint.png", "routes/og.tsx"),
 ] satisfies RouteConfig;

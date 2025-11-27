@@ -11,7 +11,7 @@ import { toHex, copyToClipboard, getCodeSnippets } from "~/lib/utils";
 import { useFavorites } from "~/hooks/useFavorites";
 import { Toast } from "~/components/ui/Toast";
 
-export function meta({ data }: Route.MetaArgs) {
+export function meta({ data, location }: Route.MetaArgs) {
   if (!data) {
     return [
       { title: "Character Not Found - Unicode Explorer" },
@@ -27,6 +27,12 @@ export function meta({ data }: Route.MetaArgs) {
     ? `Unicode character ${char} (U+${hex}) - ${charName}. Part of the ${block.name} block. Get HTML entities, CSS codes, and more.`
     : `Unicode character ${char} (U+${hex}) from the ${block.name} block. Get HTML entities, CSS codes, and more.`;
 
+  // Get OG image URL - use the pathname to construct the relative path
+  const ogImagePath = `/og/${hex}.png`;
+  const imageAlt = charName
+    ? `Unicode character ${char} - ${charName}`
+    : `Unicode character ${char} (U+${hex})`;
+
   return [
     { title },
     { name: "description", content: description },
@@ -34,10 +40,16 @@ export function meta({ data }: Route.MetaArgs) {
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { property: "og:type", content: "website" },
-    // Twitter Card
-    { name: "twitter:card", content: "summary" },
+    { property: "og:image", content: ogImagePath },
+    { property: "og:image:width", content: "1200" },
+    { property: "og:image:height", content: "630" },
+    { property: "og:image:alt", content: imageAlt },
+    // Twitter Card - use large image card for better preview
+    { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
+    { name: "twitter:image", content: ogImagePath },
+    { name: "twitter:image:alt", content: imageAlt },
     // Additional SEO
     { name: "keywords", content: `unicode, ${charName || ""}, U+${hex}, ${block.name}, character, symbol, HTML entity` },
   ];
