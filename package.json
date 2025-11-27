@@ -15,6 +15,7 @@
     "@react-router/node": "^7.6.1",
     "@react-router/serve": "^7.6.1",
     "@resvg/resvg-js": "^2.6.2",
+    "@tanstack/react-virtual": "^3.13.12",
     "isbot": "^5.1.27",
     "lucide-react": "^0.511.0",
     "minisearch": "^7.2.0",

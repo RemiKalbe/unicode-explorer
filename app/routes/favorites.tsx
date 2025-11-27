@@ -86,7 +86,7 @@ export default function FavoritesPage() {
         />
         <DesktopHeader title="Favorites" count={favorites.length} />
 
-        <div className="flex-1 overflow-y-auto p-2 lg:p-6 custom-scrollbar">
+        <div className="flex-1 overflow-hidden p-2 lg:p-6">
           <CharGrid
             charCodes={favorites}
             favorites={favorites}
