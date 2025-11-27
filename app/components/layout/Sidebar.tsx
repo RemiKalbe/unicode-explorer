@@ -4,8 +4,10 @@ import {
   UNICODE_BLOCKS,
   CATEGORIES,
   searchBlocks,
+  parseHexSearch,
   type UnicodeBlock,
 } from "~/data/unicode-blocks";
+import type { GlobalSearchResults } from "~/data/unicode-names.server";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -13,6 +15,7 @@ interface SidebarProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   favoritesCount: number;
+  globalSearchResults?: GlobalSearchResults;
 }
 
 export function Sidebar({
@@ -21,6 +24,7 @@ export function Sidebar({
   searchQuery,
   onSearchChange,
   favoritesCount,
+  globalSearchResults = {},
 }: SidebarProps) {
   const location = useLocation();
   const isFavoritesPage = location.pathname === "/favorites";
@@ -28,7 +32,15 @@ export function Sidebar({
     ? location.pathname.replace("/block/", "")
     : null;
 
-  const filteredBlocks = searchBlocks(searchQuery);
+  // Determine which blocks to show based on search
+  const hasGlobalResults = Object.keys(globalSearchResults).length > 0;
+  const isNameSearch = searchQuery.length >= 2 && parseHexSearch(searchQuery) === null;
+
+  // If searching by name and have results, only show blocks with matches
+  // Otherwise, filter by block name as before
+  const filteredBlocks = isNameSearch && hasGlobalResults
+    ? UNICODE_BLOCKS.filter((b) => globalSearchResults[b.slug]?.length > 0)
+    : searchBlocks(searchQuery);
 
   return (
     <>
@@ -130,23 +142,37 @@ export function Sidebar({
                     />
                     {cat}
                   </div>
-                  {catBlocks.map((block) => (
-                    <Link
-                      key={block.name}
-                      to={`/block/${block.slug}`}
-                      onClick={onClose}
-                      className={`w-full text-left px-4 py-3 md:py-1.5 text-xs font-medium transition-colors flex items-center justify-between group ${
-                        currentBlockSlug === block.slug
-                          ? "bg-olive-53 dark:bg-olive-65 text-white dark:text-black"
-                          : "text-darkzinc-21 dark:text-lightzinc-40 hover:text-olive-41 dark:hover:text-olive-53 hover:bg-softcreme-94 dark:hover:bg-darkzinc-9/50 active:bg-softcreme-90 dark:active:bg-darkzinc-15"
-                      }`}
-                    >
-                      <span className="truncate pr-2">{block.name}</span>
-                      {currentBlockSlug === block.slug && (
-                        <span className="font-bold">{"<"}</span>
-                      )}
-                    </Link>
-                  ))}
+                  {catBlocks.map((block) => {
+                    const hitCount = globalSearchResults[block.slug]?.length || 0;
+                    const blockUrl = isNameSearch && searchQuery
+                      ? `/block/${block.slug}?q=${encodeURIComponent(searchQuery)}`
+                      : `/block/${block.slug}`;
+                    return (
+                      <Link
+                        key={block.name}
+                        to={blockUrl}
+                        onClick={onClose}
+                        className={`w-full text-left px-4 py-3 md:py-1.5 text-xs font-medium transition-colors flex items-center justify-between group ${
+                          currentBlockSlug === block.slug
+                            ? "bg-olive-53 dark:bg-olive-65 text-white dark:text-black"
+                            : "text-darkzinc-21 dark:text-lightzinc-40 hover:text-olive-41 dark:hover:text-olive-53 hover:bg-softcreme-94 dark:hover:bg-darkzinc-9/50 active:bg-softcreme-90 dark:active:bg-darkzinc-15"
+                        }`}
+                      >
+                        <span className="truncate pr-2">{block.name}</span>
+                        {isNameSearch && hitCount > 0 ? (
+                          <span className={`text-[10px] px-1.5 ${
+                            currentBlockSlug === block.slug
+                              ? "bg-white/20 dark:bg-black/20"
+                              : "bg-olive-88 dark:bg-olive-35/30 text-olive-41 dark:text-olive-65"
+                          }`}>
+                            {hitCount}
+                          </span>
+                        ) : currentBlockSlug === block.slug ? (
+                          <span className="font-bold">{"<"}</span>
+                        ) : null}
+                      </Link>
+                    );
+                  })}
                 </div>
               );
             })}

@@ -1,7 +1,7 @@
-import { useState, useCallback } from "react";
-import { useSearchParams } from "react-router";
+import { useState, useCallback, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import type { Route } from "./+types/favorites";
-import { parseCodePoint } from "~/data/unicode-blocks";
+import { parseCodePoint, parseHexSearch, UNICODE_BLOCKS } from "~/data/unicode-blocks";
 import { Sidebar } from "~/components/layout/Sidebar";
 import { MobileHeader, DesktopHeader } from "~/components/layout/Header";
 import { CharGrid } from "~/components/layout/CharGrid";
@@ -21,22 +21,39 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function FavoritesPage() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   // Get modal char from URL search params
   const charParam = searchParams.get("char");
   const modalChar = charParam ? parseCodePoint(charParam) : null;
 
   // Auto-open sidebar on desktop
-  useState(() => {
+  useEffect(() => {
     if (typeof window !== "undefined" && window.innerWidth >= 1024) {
       setIsSidebarOpen(true);
     }
-  });
+  }, []);
+
+  // Handle search - navigate to first block for name searches
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      // For name searches (non-hex), navigate to first block with search query
+      if (query.length >= 2 && parseHexSearch(query) === null) {
+        const timeoutId = setTimeout(() => {
+          const firstBlock = UNICODE_BLOCKS[0];
+          navigate(`/block/${firstBlock.slug}?q=${encodeURIComponent(query)}`);
+        }, 300);
+        return () => clearTimeout(timeoutId);
+      }
+    },
+    [navigate]
+  );
 
   const showToast = useCallback((msg: string) => setToastMsg(msg), []);
 
@@ -58,7 +75,7 @@ export default function FavoritesPage() {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         favoritesCount={favorites.length}
       />
 

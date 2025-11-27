@@ -1,6 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { data, useNavigate, useSearchParams } from "react-router";
-import MiniSearch from "minisearch";
 import type { Route } from "./+types/block";
 import {
   getBlockBySlug,
@@ -8,7 +7,12 @@ import {
   parseHexSearch,
   parseCodePoint,
 } from "~/data/unicode-blocks";
-import { loadBlockNames, type CharacterNames } from "~/data/unicode-names.server";
+import {
+  loadBlockNames,
+  searchAllBlocks,
+  type CharacterNames,
+  type GlobalSearchResults,
+} from "~/data/unicode-names.server";
 import { Sidebar } from "~/components/layout/Sidebar";
 import { MobileHeader, DesktopHeader } from "~/components/layout/Header";
 import { CharGrid } from "~/components/layout/CharGrid";
@@ -33,7 +37,7 @@ export function meta({ data }: Route.MetaArgs) {
   ];
 }
 
-export function loader({ params }: Route.LoaderArgs) {
+export function loader({ params, request }: Route.LoaderArgs) {
   const block = getBlockBySlug(params.blockSlug);
 
   if (!block) {
@@ -43,7 +47,22 @@ export function loader({ params }: Route.LoaderArgs) {
   // Load character names server-side
   const names = loadBlockNames(block.slug);
 
-  return { block, names };
+  // Check for search query in URL params
+  const url = new URL(request.url);
+  const searchQuery = url.searchParams.get("q") || "";
+
+  // Perform global search if there's a query
+  let globalSearchResults: GlobalSearchResults = {};
+  if (searchQuery.length >= 2) {
+    // Check if it's a hex search first
+    const hexMatch = parseHexSearch(searchQuery);
+    if (hexMatch === null) {
+      // Not a hex search, do name search across all blocks
+      globalSearchResults = searchAllBlocks(searchQuery);
+    }
+  }
+
+  return { block, names, searchQuery, globalSearchResults };
 }
 
 // Helper to get character name from names object
@@ -54,46 +73,43 @@ function getCharName(names: CharacterNames, charCode: number): string | undefine
 }
 
 export default function BlockPage({ loaderData }: Route.ComponentProps) {
-  const { block, names } = loaderData;
-  const [searchQuery, setSearchQuery] = useState("");
+  const { block, names, searchQuery: initialSearchQuery, globalSearchResults } = loaderData;
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const { favorites, toggleFavorite } = useFavorites();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   // Get modal char from URL search params
   const charParam = searchParams.get("char");
   const modalChar = charParam ? parseCodePoint(charParam) : null;
 
-  // Build MiniSearch index for character names
-  const searchIndex = useMemo(() => {
-    const index = new MiniSearch<{ id: string; name: string; code: number }>({
-      fields: ["name"],
-      storeFields: ["code"],
-      searchOptions: {
-        prefix: true,
-        fuzzy: 0.2,
-      },
-    });
-
-    // Convert names to documents for indexing
-    const docs = Object.entries(names).map(([hex, name]) => ({
-      id: hex,
-      name,
-      code: parseInt(hex, 16),
-    }));
-
-    index.addAll(docs);
-    return index;
-  }, [names]);
+  // Sync search query with URL
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      // Debounce URL update
+      const timeoutId = setTimeout(() => {
+        const params = new URLSearchParams(searchParams);
+        if (query) {
+          params.set("q", query);
+        } else {
+          params.delete("q");
+        }
+        navigate(`/block/${block.slug}${params.toString() ? `?${params}` : ""}`, { replace: true });
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    },
+    [navigate, block.slug, searchParams]
+  );
 
   // Auto-open sidebar on desktop
-  useState(() => {
+  useEffect(() => {
     if (typeof window !== "undefined" && window.innerWidth >= 1024) {
       setIsSidebarOpen(true);
     }
-  });
+  }, []);
 
   const showToast = useCallback((msg: string) => setToastMsg(msg), []);
 
@@ -114,14 +130,19 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
         return [hexMatch];
       }
 
-      // Search by character name using MiniSearch
-      const results = searchIndex.search(searchQuery);
-      if (results.length > 0) {
-        return results.map((r) => r.code as number).sort((a, b) => a - b);
+      // Use global search results for current block
+      const blockResults = globalSearchResults[block.slug];
+      if (blockResults && blockResults.length > 0) {
+        return blockResults;
+      }
+
+      // If searching but no results for this block, show empty
+      if (Object.keys(globalSearchResults).length > 0) {
+        return [];
       }
     }
     return getCharCodesForBlock(block);
-  }, [block, searchQuery, searchIndex]);
+  }, [block, searchQuery, globalSearchResults]);
 
   return (
     <div className="flex h-screen bg-softcreme-98 dark:bg-darkzinc text-darkzinc-21 dark:text-lightzinc-40 font-mono overflow-hidden relative selection:bg-olive-88 dark:selection:bg-olive-35 selection:text-olive-41 dark:selection:text-olive-82">
@@ -132,8 +153,9 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={handleSearchChange}
         favoritesCount={favorites.length}
+        globalSearchResults={globalSearchResults}
       />
 
       <main className="flex-1 flex flex-col min-w-0 bg-softcreme-98 dark:bg-darkzinc relative">
@@ -154,7 +176,9 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
             favorites={favorites}
             onCharClick={(code) => {
               // Update URL with char param to open modal
-              setSearchParams({ char: toHex(code) });
+              const params = new URLSearchParams(searchParams);
+              params.set("char", toHex(code));
+              setSearchParams(params);
             }}
             onToggleFav={handleToggleFavorite}
           />
@@ -168,7 +192,9 @@ export default function BlockPage({ loaderData }: Route.ComponentProps) {
           charName={getCharName(names, modalChar)}
           onClose={() => {
             // Remove char param to close modal
-            setSearchParams({});
+            const params = new URLSearchParams(searchParams);
+            params.delete("char");
+            setSearchParams(params);
           }}
           onToggleFav={handleToggleFavorite}
           isFav={favorites.includes(modalChar)}
