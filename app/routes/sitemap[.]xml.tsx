@@ -2,7 +2,7 @@ import type { Route } from "./+types/sitemap[.]xml";
 import { UNICODE_BLOCKS } from "~/data/unicode-blocks";
 
 // Base URL for the site - should be configured via environment variable in production
-const BASE_URL = process.env.SITE_URL || "https://unicode-explorer.com";
+const BASE_URL = process.env.SITE_URL || "https://utf.lab.remi.boo";
 
 export async function loader({}: Route.LoaderArgs) {
   const lastMod = new Date().toISOString().split("T")[0];

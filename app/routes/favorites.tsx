@@ -11,7 +11,7 @@ import { useFavorites } from "~/hooks/useFavorites";
 import { toHex } from "~/lib/utils";
 
 // Base URL for canonical links
-const BASE_URL = process.env.SITE_URL || "https://unicode-explorer.com";
+const BASE_URL = process.env.SITE_URL || "https://utf.lab.remi.boo";
 
 export function meta({}: Route.MetaArgs) {
   const canonicalUrl = `${BASE_URL}/favorites`;

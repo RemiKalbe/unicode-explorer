@@ -2,7 +2,7 @@ import type { Route } from "./+types/sitemap-block.$blockSlug[.]xml";
 import { getBlockBySlug, getCharCodesForBlock } from "~/data/unicode-blocks";
 
 // Base URL for the site
-const BASE_URL = process.env.SITE_URL || "https://unicode-explorer.com";
+const BASE_URL = process.env.SITE_URL || "https://utf.lab.remi.boo";
 
 export async function loader({ params }: Route.LoaderArgs) {
   const blockSlug = params.blockSlug;

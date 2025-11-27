@@ -5,7 +5,7 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://unicode-explorer.com/sitemap.xml
+Sitemap: https://utf.lab.remi.boo/sitemap.xml
 
 # Disallow query parameters that could cause duplicate content
 # but allow the main character pages
