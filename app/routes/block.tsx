@@ -46,7 +46,8 @@ export function loader({ params }: Route.LoaderArgs) {
 
 // Helper to get character name from names object
 function getCharName(names: CharacterNames, charCode: number): string | undefined {
-  const hex = charCode.toString(16).toUpperCase();
+  // Pad hex to at least 4 characters to match the JSON keys (e.g., "0180" not "180")
+  const hex = charCode.toString(16).toUpperCase().padStart(4, "0");
   return names[hex];
 }
 
