@@ -23,6 +23,9 @@ import { Toast } from "~/components/ui/Toast";
 import { useFavorites } from "~/hooks/useFavorites";
 import { toHex } from "~/lib/utils";
 
+// Base URL for canonical links and structured data
+const BASE_URL = process.env.SITE_URL || "https://utf.lab.remi.boo";
+
 export function meta({ data }: Route.MetaArgs) {
   if (!data) {
     return [
@@ -46,43 +49,136 @@ export function meta({ data }: Route.MetaArgs) {
     const imageAlt = charName
       ? `Unicode character ${char} - ${charName}`
       : `Unicode character ${char} (U+${hex})`;
+    const canonicalUrl = `${BASE_URL}/block/${block.slug}/${hex}`;
+
+    // JSON-LD structured data for character page
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: title,
+      description: description,
+      url: canonicalUrl,
+      mainEntity: {
+        "@type": "Thing",
+        name: charName || `Unicode Character U+${hex}`,
+        description: description,
+        identifier: `U+${hex}`,
+        alternateName: [
+          `U+${hex}`,
+          `&#${parseInt(hex, 16)};`,
+          `&#x${hex};`,
+        ],
+      },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Unicode Explorer",
+            item: BASE_URL,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: block.name,
+            item: `${BASE_URL}/block/${block.slug}`,
+          },
+          {
+            "@type": "ListItem",
+            position: 3,
+            name: charName || `U+${hex}`,
+            item: canonicalUrl,
+          },
+        ],
+      },
+    };
 
     return [
       { title },
       { name: "description", content: description },
+      // Canonical URL
+      { tagName: "link", rel: "canonical", href: canonicalUrl },
       // Open Graph
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: ogImagePath },
+      { property: "og:url", content: canonicalUrl },
+      { property: "og:image", content: `${BASE_URL}${ogImagePath}` },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:alt", content: imageAlt },
+      { property: "og:site_name", content: "Unicode Explorer" },
       // Twitter Card
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: description },
-      { name: "twitter:image", content: ogImagePath },
+      { name: "twitter:image", content: `${BASE_URL}${ogImagePath}` },
       { name: "twitter:image:alt", content: imageAlt },
       // Additional SEO
-      { name: "keywords", content: `unicode, ${charName || ""}, U+${hex}, ${block.name}, character, symbol, HTML entity` },
+      { name: "keywords", content: `unicode, ${charName || ""}, U+${hex}, ${block.name}, character, symbol, HTML entity, character code` },
+      // JSON-LD Structured Data
+      {
+        "script:ld+json": jsonLd,
+      },
     ];
   }
 
   // Default block meta (no character selected)
   const blockDescription = `Explore Unicode characters in the ${block.name} block (U+${block.start.toString(16).toUpperCase().padStart(4, "0")} - U+${block.end.toString(16).toUpperCase().padStart(4, "0")})`;
+  const canonicalUrl = `${BASE_URL}/block/${block.slug}`;
+
+  // JSON-LD structured data for block page
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `${block.name} - Unicode Explorer`,
+    description: blockDescription,
+    url: canonicalUrl,
+    mainEntity: {
+      "@type": "ItemList",
+      name: block.name,
+      description: `Unicode characters in the ${block.name} block`,
+      numberOfItems: block.end - block.start + 1,
+    },
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Unicode Explorer",
+          item: BASE_URL,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: block.name,
+          item: canonicalUrl,
+        },
+      ],
+    },
+  };
 
   return [
     { title: `${block.name} - Unicode Explorer` },
     { name: "description", content: blockDescription },
+    // Canonical URL
+    { tagName: "link", rel: "canonical", href: canonicalUrl },
     // Open Graph for block
     { property: "og:title", content: `${block.name} - Unicode Explorer` },
     { property: "og:description", content: blockDescription },
     { property: "og:type", content: "website" },
+    { property: "og:url", content: canonicalUrl },
+    { property: "og:site_name", content: "Unicode Explorer" },
     // Twitter Card for block
     { name: "twitter:card", content: "summary" },
     { name: "twitter:title", content: `${block.name} - Unicode Explorer` },
     { name: "twitter:description", content: blockDescription },
+    // JSON-LD Structured Data
+    {
+      "script:ld+json": jsonLd,
+    },
   ];
 }
 
