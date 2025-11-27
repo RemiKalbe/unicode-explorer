@@ -26,7 +26,7 @@ function loadFontFile(filename: string): Buffer {
 // Use Noto Serif to match the website's font-serif styling for characters
 const jetBrainsMonoFont = loadFontFile("JetBrainsMono-Regular.ttf");
 const notoSerifFont = loadFontFile("NotoSerif-Regular.ttf");
-const notoEmojiFont = loadFontFile("NotoEmoji-Regular.ttf");
+const notoSymbolsFont = loadFontFile("NotoSansSymbols2-Regular.ttf");
 
 export async function loader({ params }: Route.LoaderArgs) {
   const codepoint = params.codepoint;
@@ -150,7 +150,7 @@ export async function loader({ params }: Route.LoaderArgs) {
                   fontSize: "180px",
                   color: textColor,
                   lineHeight: 1,
-                  fontFamily: "Noto Emoji, Noto Serif, JetBrains Mono",
+                  fontFamily: "Noto Symbols, Noto Serif, JetBrains Mono",
                 }}
               >
                 {char}
@@ -225,8 +225,8 @@ export async function loader({ params }: Route.LoaderArgs) {
           style: "normal",
         },
         {
-          name: "Noto Emoji",
-          data: notoEmojiFont,
+          name: "Noto Symbols",
+          data: notoSymbolsFont,
           weight: 400,
           style: "normal",
         },
