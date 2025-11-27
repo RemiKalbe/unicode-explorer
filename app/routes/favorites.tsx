@@ -13,6 +13,7 @@ import { toHex } from "~/lib/utils";
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Favorites - Unicode Explorer" },
+    { name: "description", content: "Your saved Unicode characters." },
     { name: "robots", content: "noindex, follow" },
   ];
 }
